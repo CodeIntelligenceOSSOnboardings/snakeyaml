@@ -14,12 +14,12 @@
 package org.yaml.snakeyaml.issues.issue73;
 
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.Set;
 import junit.framework.TestCase;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Util;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.RPLinkedHashSet;
 
 public class RecursiveSetTest extends TestCase {
 
@@ -62,21 +62,14 @@ public class RecursiveSetTest extends TestCase {
     Bean1 obj = yaml.load(doc);
     Set<Object> set = obj.getSet();
     // System.out.println(set);
-    assertEquals(LinkedHashSet.class, set.getClass());
+    assertEquals(RPLinkedHashSet.class, set.getClass());
     assertEquals("ID123", obj.getId());
     assertEquals(3, set.size());
     assertTrue(set.remove("zzz"));
     assertTrue(set.remove("ccc"));
     assertFalse(set.contains("111"));
-    try {
-      set.contains(set);
-      fail("Recursive set fails to provide a hashcode.");
-    } catch (StackOverflowError e) {
-      // ignore
-    }
-    //
     Set<Object> self = (Set<Object>) set.iterator().next();
-    assertEquals(LinkedHashSet.class, self.getClass());
+    assertEquals(RPLinkedHashSet.class, self.getClass());
     assertEquals(set, self);
     assertSame(set, self);
     assertEquals(1, set.size());

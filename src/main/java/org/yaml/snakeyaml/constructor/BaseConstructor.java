@@ -134,11 +134,14 @@ public abstract class BaseConstructor {
     rootTag = null;
     explicitPropertyUtils = false;
 
+    boolean rok = loadingConfig.getAllowRecursiveKeys();
+
     typeDefinitions.put(SortedMap.class,
-        new TypeDescription(SortedMap.class, Tag.OMAP, TreeMap.class));
+        new TypeDescription(SortedMap.class, Tag.OMAP, rok ? RPTreeMap.class : TreeMap.class));
     typeDefinitions.put(SortedSet.class,
-        new TypeDescription(SortedSet.class, Tag.SET, TreeSet.class));
+        new TypeDescription(SortedSet.class, Tag.SET, rok ? RPTreeSet.class : TreeSet.class));
     this.loadingConfig = loadingConfig;
+
   }
 
   public void setComposer(Composer composer) {
@@ -314,15 +317,24 @@ public abstract class BaseConstructor {
 
   // >>>> DEFAULTS >>>>
   protected List<Object> createDefaultList(int initSize) {
+    if (loadingConfig.getAllowRecursiveKeys()) {
+      return new RPArrayList<>(initSize);
+    }
     return new ArrayList<Object>(initSize);
   }
 
   protected Set<Object> createDefaultSet(int initSize) {
+    if (loadingConfig.getAllowRecursiveKeys()) {
+      return new RPLinkedHashSet<>(initSize);
+    }
     return new LinkedHashSet<Object>(initSize);
   }
 
   protected Map<Object, Object> createDefaultMap(int initSize) {
     // respect order from YAML document
+    if (loadingConfig.getAllowRecursiveKeys()) {
+      return new RPLinkedHashMap<>(initSize);
+    }
     return new LinkedHashMap<Object, Object>(initSize);
   }
 
@@ -570,14 +582,6 @@ public abstract class BaseConstructor {
       Node keyNode = tuple.getKeyNode();
       Node valueNode = tuple.getValueNode();
       Object key = constructObject(keyNode);
-      if (key != null) {
-        try {
-          key.hashCode();// check circular dependencies
-        } catch (Exception e) {
-          throw new ConstructorException("while constructing a mapping", node.getStartMark(),
-              "found unacceptable key " + key, tuple.getKeyNode().getStartMark(), e);
-        }
-      }
       Object value = constructObject(valueNode);
       if (keyNode.isTwoStepsConstruction()) {
         if (loadingConfig.getAllowRecursiveKeys()) {

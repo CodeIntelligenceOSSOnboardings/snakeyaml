@@ -20,6 +20,7 @@ import junit.framework.TestCase;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Util;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.RPTreeSet;
 
 public class RecursiveSortedSetTest extends TestCase {
 
@@ -60,7 +61,7 @@ public class RecursiveSortedSetTest extends TestCase {
     Yaml yaml = new Yaml(options);
     Bean11 beanWithSet = yaml.load(doc);
     Set<Object> set = beanWithSet.getSet();
-    assertEquals(TreeSet.class, set.getClass());
+    assertEquals(RPTreeSet.class, set.getClass());
     assertEquals("ID555", beanWithSet.getId());
     assertEquals(3, set.size());
     assertTrue(set.remove("ggg"));

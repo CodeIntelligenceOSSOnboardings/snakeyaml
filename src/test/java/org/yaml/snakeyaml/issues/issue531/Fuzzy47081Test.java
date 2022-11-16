@@ -14,10 +14,11 @@
 package org.yaml.snakeyaml.issues.issue531;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.List;
+import java.util.Map;
+
 import org.junit.Test;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -26,50 +27,28 @@ import org.yaml.snakeyaml.error.YAMLException;
 // Stackoverflow [OSS-Fuzz - 47081]
 
 /**
- * A proof that this issue is a FALSE POSITIVE https://nvd.nist.gov/vuln/detail/CVE-2022-38752
+ * OSS-Fuzz - 47081.
+ * <ul>
+ *     <li><a href="https://nvd.nist.gov/vuln/detail/CVE-2022-38752">CVE-2022-38752</a></li>
+ *     <li><a href="https://nvd.nist.gov/vuln/detail/CVE-2022-41854">CVE-2022-41854</a></li>
+ * </ul>
+ * <p>
+ *
  */
 public class Fuzzy47081Test {
 
-  /**
-   * Recursive key should NOT be used for untrusted data to avoid
-   */
-  @Test
-  public void parse47081_no_recursion_allowed() {
-    LoaderOptions options = new LoaderOptions();
-    options.setAllowRecursiveKeys(false); // must be set to false for untrusted source
-    Yaml yaml = new Yaml(options);
-    String strYaml = "  &a\n" + "- *a\n" + "- *a\n" + "- *a:\n" + "- *a\n" + "- *a\n" + "- *a";
-    try {
-      yaml.load(strYaml);
-      fail("Should report invalid YAML: " + strYaml);
-    } catch (YAMLException e) {
-      assertEquals("Recursive key for mapping is detected but it is not configured to be allowed.",
-          e.getMessage());
-    }
-  }
-
-  /**
-   * Recursive list fails (with StackOverflowError) because it is used as a key Recursive key should
-   * NOT be used for untrusted data
-   */
   @Test
   public void parse47081_allow_recursion() {
-    try {
-      LoaderOptions options = new LoaderOptions();
-      options.setAllowRecursiveKeys(true);
-      Yaml yaml = new Yaml(options);
-      String strYaml = "&a\n" + "- *a\n" // if this line is removed, the test properly complains
-      // about the recursive keys in map -> Recursive key for
-      // mapping is detected, but it is not configured to be
-      // allowed.
-          + "- *a:\n"; // when the colon is removed, the test is Ok, because the recursive list is
-      // not a key
-      // System.out.println(strYaml);
-      yaml.load(strYaml);
-      fail("Should report invalid YAML: " + strYaml);
-    } catch (StackOverflowError e) {
-      assertTrue(true);
-    }
+    String strYaml = "&a\n" + "- *a\n" + "- *a:\n";
+    List<Object> parsed = grind(strYaml);
+    assertEquals(strYaml, 2, parsed.size());
+  }
+
+  @Test
+  public void parse47081_allow_recursion2() {
+    String strYaml = "&a\n*a:\n  - *a:\n";
+    Map<Object, Object> parsed = grind(strYaml);
+    assertEquals(strYaml, 1, parsed.size());
   }
 
   @Test
@@ -77,8 +56,33 @@ public class Fuzzy47081Test {
     LoaderOptions options = new LoaderOptions();
     options.setAllowRecursiveKeys(true);
     Yaml yaml = new Yaml(options);
+    // this YAML doesn't cause a recursion failure even if
+    // the setAllowRecursiveKeys(false) is used. Because the
+    // recursion is not in the keys. However, the result is still
+    // a recursive tree that is prone to stack-overflows.
     String strYaml = "&a\n" + "- *a\n" + "- *a\n";
     List<Object> parsed = yaml.load(strYaml);
     assertEquals(strYaml, 2, parsed.size());
+    parsed.hashCode();
   }
+
+  private <T> T grind(String strYaml) {
+
+    LoaderOptions options = new LoaderOptions();
+    options.setAllowRecursiveKeys(false); // must be set to false for untrusted source
+    Yaml yaml = new Yaml(options);
+    try {
+      yaml.load(strYaml);
+      fail("Should report invalid YAML: " + strYaml);
+    } catch (YAMLException e) {
+      assertEquals("Recursive key for mapping is detected but it is not configured to be allowed.",
+              e.getMessage());
+    }
+
+    options.setAllowRecursiveKeys(true);
+    yaml = new Yaml(options);
+    return yaml.load(strYaml);
+
+  }
+
 }
