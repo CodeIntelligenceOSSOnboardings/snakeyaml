@@ -29,8 +29,8 @@ import org.yaml.snakeyaml.error.YAMLException;
 /**
  * OSS-Fuzz - 47081.
  * <ul>
- *     <li><a href="https://nvd.nist.gov/vuln/detail/CVE-2022-38752">CVE-2022-38752</a></li>
- *     <li><a href="https://nvd.nist.gov/vuln/detail/CVE-2022-41854">CVE-2022-41854</a></li>
+ * <li><a href="https://nvd.nist.gov/vuln/detail/CVE-2022-38752">CVE-2022-38752</a></li>
+ * <li><a href="https://nvd.nist.gov/vuln/detail/CVE-2022-41854">CVE-2022-41854</a></li>
  * </ul>
  * <p>
  *
@@ -76,7 +76,7 @@ public class Fuzzy47081Test {
       fail("Should report invalid YAML: " + strYaml);
     } catch (YAMLException e) {
       assertEquals("Recursive key for mapping is detected but it is not configured to be allowed.",
-              e.getMessage());
+          e.getMessage());
     }
 
     options.setAllowRecursiveKeys(true);

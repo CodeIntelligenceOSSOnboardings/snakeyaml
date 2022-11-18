@@ -1,28 +1,46 @@
+/**
+ * Copyright (c) 2008, SnakeYAML
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package org.yaml.snakeyaml.constructor;
 
 import java.util.LinkedHashMap;
 
 /**
- * Somewhat recursion-proof linked hash map
+ * Collection with non-recursive hashCode()
  */
-public class RPLinkedHashMap<K,V> extends LinkedHashMap<K,V> {
+public class RPLinkedHashMap<K, V> extends LinkedHashMap<K, V> {
 
-    protected RecursiveGuard guard = new RecursiveGuard();
+  private boolean avoidHashCode = false;
 
-    public RPLinkedHashMap(int initSize) {
-        super(initSize);
+  public RPLinkedHashMap(int initSize) {
+    super(initSize);
+  }
+
+  /**
+   * Safe hashCode. For recursive structures it returns its address
+   *
+   * @return System.identityHashCode() for recursive structure
+   */
+  public int hashCode() {
+
+    if (avoidHashCode) {
+      return System.identityHashCode(this);
     }
-
-    public int hashCode() {
-
-        if (guard.get()) { return size(); }
-        guard.set(true);
-        try {
-            return super.hashCode();
-        } finally {
-            guard.set(false);
-        }
-
+    avoidHashCode = true;
+    try {
+      return super.hashCode();
+    } finally {
+      avoidHashCode = false;
     }
-
+  }
 }
